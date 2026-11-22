@@ -14,7 +14,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             // Must be greater than or equal to maxAge in Persister
-            gcTime: 1000 * 60 * 60 * 24, // 24 ساعت
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
             staleTime: 60 * 1000,
           },
         },
