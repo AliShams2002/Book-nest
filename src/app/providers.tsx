@@ -4,24 +4,21 @@ import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // Using useState to prevent the client from being recreated on every render
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Must be greater than or equal to maxAge in Persister
-            gcTime: 1000 * 60 * 60 * 24, // 24 hours
+            gcTime: 1000 * 60 * 60 * 24,
             staleTime: 60 * 1000,
           },
         },
       })
   );
 
-  // Create the Persister only on the client side (since it has access to `window`)
   const [persister] = useState(() =>
     typeof window !== 'undefined'
       ? createSyncStoragePersister({
@@ -31,7 +28,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       : undefined
   );
 
-  // Create the Persister only on the client side (since it has access to `window`)
+  // State to determine whether the component has mounted on the client side
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   if (!persister) {
     return (
       <PersistQueryClientProvider client={queryClient}>
@@ -46,7 +49,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       persistOptions={{ persister }}
     >
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* DevTools is rendered only when the component has mounted on the client side */}
+      {isMounted && <ReactQueryDevtools initialIsOpen={false} />}
     </PersistQueryClientProvider>
   );
 }
