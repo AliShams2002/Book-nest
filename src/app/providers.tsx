@@ -1,52 +1,27 @@
 'use client';
 
-import { QueryClient } from '@tanstack/react-query';
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'sonner';
 import { useState } from 'react';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   // Using useState to prevent the client from being recreated on every render
-  const [queryClient] = useState(
+
+  const [qc] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: {
-            // Must be greater than or equal to maxAge in Persister
-            gcTime: 1000 * 60 * 60 * 24, // 24 ساعت
-            staleTime: 60 * 1000,
-          },
+          queries: { staleTime: 60_000, refetchOnWindowFocus: false, retry: 1 },
         },
       })
   );
 
-  // Create the Persister only on the client side (since it has access to `window`)
-  const [persister] = useState(() =>
-    typeof window !== 'undefined'
-      ? createSyncStoragePersister({
-          storage: window.localStorage,
-          key: 'TANSTACK_QUERY_CACHE',
-        })
-      : undefined
-  );
-
-  // Create the Persister only on the client side (since it has access to `window`)
-  if (!persister) {
-    return (
-      <PersistQueryClientProvider client={queryClient}>
-        {children}
-      </PersistQueryClientProvider>
-    );
-  }
-
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister }}
-    >
+    <QueryClientProvider client={qc}>
       {children}
+      <Toaster position="top-center" richColors />
       <ReactQueryDevtools initialIsOpen={false} />
-    </PersistQueryClientProvider>
+    </QueryClientProvider>
   );
 }
